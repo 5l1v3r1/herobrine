@@ -40,7 +40,6 @@ function initialSetup {
     if ! grep -q "herobrine" /etc/hostname; then
         echo "herobrine" >/etc/hostname
     fi
-
     if ! grep -q "herobrine" /etc/hosts; then
         sed -i 's/raspberrypi/herobrine/g' /etc/hosts
     fi

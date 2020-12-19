@@ -157,6 +157,7 @@ function autoSSH {
 
 	echo -e "${yellowColor}[*] Creating cronjob for autossh...${resetColor}"
 	crontab -l > mycron
+	echo "@reboot sleep 5 && /bin/autossh-connect.sh > /dev/null 2>&1" >> mycron
 	echo "/5 * * * * /bin/autossh-connect.sh > /dev/null 2>&1" >> mycron
 	crontab mycron
 	rm mycron

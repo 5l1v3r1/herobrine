@@ -73,10 +73,7 @@ function tools {
 }
 
 function SSHServer {
-    echo -e "${yellowColor}[*] Installing and configuring OpenSSH Server...${resetColor}"
-    if ! dpkg -l openssh-server >/dev/null 2>&1; then
-        apt-get install openssh-server -y
-    fi
+    echo -e "${yellowColor}[*] Changing configuration file /etc/ssh/sshd_config, setting port 443 for SSH...${resetColor}"
     if ! grep -q "PermitRootLogin yes" /etc/ssh/sshd_config; then
     sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/g' /etc/ssh/sshd_config
     fi

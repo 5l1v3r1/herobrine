@@ -38,11 +38,11 @@ function printBanner {
 function initialSetup {
     echo -e "${yellowColor}[*]Changing hostname to "herobrine"...${resetColor}"
     if ! grep -q "herobrine" /etc/hostname; then
-        echo "herobrine" >>/etc/hostname
+        echo "herobrine" >/etc/hostname
     fi
 
     if ! grep -q "herobrine" /etc/hosts; then
-        sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/g' /etc/hosts
+        sed -i 's/raspberrypi/herobrine/g' /etc/hosts
     fi
 
     echo -e "${yellowColor}[*] Updating list of repositories...${resetColor}"

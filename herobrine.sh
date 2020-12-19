@@ -6,12 +6,9 @@
 # Color variables
 resetColor="\e[0m"
 redColor="\e[1;31m"
-greenColor="\e[1;32m"
 yellowColor="\e[1;33m"
-blueColor="\e[1;34m"
 magentaColor="\e[1;35m"
 cyanColor="\e[1;36m"
-whiteColor="\e[1;37m"
 
 function isRoot {
     if [ "$EUID" -ne 0 ]; then

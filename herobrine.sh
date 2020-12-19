@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Herobrine Pentesting Dropbox Installer for Debian
-# URL: https://github.com/takito1812
+# URL: https://github.com/takito1812/herobrine
 
 # Color variables
 resetColor="\e[0m"

